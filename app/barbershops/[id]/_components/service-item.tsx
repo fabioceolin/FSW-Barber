@@ -23,6 +23,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { getDayBookings } from '../_actions/get-day-bookings';
+import BookingInfo from '@/app/_components/booking-info';
 
 interface ServiceItemProps {
   barbershop: Barbershop;
@@ -31,8 +32,8 @@ interface ServiceItemProps {
 }
 
 const ServiceItem = ({
-  barbershop,
   service,
+  barbershop,
   isAuthenticated,
 }: ServiceItemProps) => {
   const router = useRouter();
@@ -75,12 +76,15 @@ const ServiceItem = ({
 
   const handleBookingSubmit = async () => {
     setSubmitIsLoading(true);
+
     try {
       if (!hour || !date || !data?.user) {
         return;
       }
+
       const dateHour = Number(hour.split(':')[0]);
       const dateMinutes = Number(hour.split(':')[1]);
+
       const newDate = setMinutes(setHours(date, dateHour), dateMinutes);
 
       await saveBooking({
@@ -93,7 +97,6 @@ const ServiceItem = ({
       setSheetIsOpen(false);
       setHour(undefined);
       setDate(undefined);
-
       toast('Reserva realizada com sucesso!', {
         description: format(newDate, "'Para' dd 'de' MMMM 'às' HH':'mm'.'", {
           locale: ptBR,
@@ -136,8 +139,8 @@ const ServiceItem = ({
 
   return (
     <Card>
-      <CardContent className='p-3'>
-        <div className='flex gap-4 items-center'>
+      <CardContent className='p-3 w-full'>
+        <div className='flex gap-4 items-center w-full'>
           <div className='relative min-h-[110px] min-w-[110px] max-h-[110px] max-w-[110px]'>
             <Image
               className='rounded-lg'
@@ -204,8 +207,9 @@ const ServiceItem = ({
                     />
                   </div>
 
+                  {/* Mostrar lista de horários apenas se alguma data estiver selecionada */}
                   {date && (
-                    <div className='flex gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden py-6 px-5 border-t border-solid border-secondary'>
+                    <div className='flex gap-3 overflow-x-auto py-6 px-5 border-t border-solid border-secondary [&::-webkit-scrollbar]:hidden'>
                       {timeList.map((time) => (
                         <Button
                           onClick={() => handleHourClick(time)}
@@ -220,43 +224,21 @@ const ServiceItem = ({
                   )}
 
                   <div className='py-6 px-5 border-t border-solid border-secondary'>
-                    <Card>
-                      <CardContent className='p-3 gap-3 flex flex-col'>
-                        <div className='flex justify-between items-center'>
-                          <h2 className='font-bold'>{service.name}</h2>
-                          <h3 className='font-bold text-sm'>
-                            {Intl.NumberFormat('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            }).format(Number(service.price))}
-                          </h3>
-                        </div>
-
-                        {date && (
-                          <div className='flex justify-between items-center'>
-                            <h3 className='text-gray-400'>Data</h3>
-                            <h4 className='text-sm'>
-                              {format(date, "dd 'de' MMMM", {
-                                locale: ptBR,
-                              })}
-                            </h4>
-                          </div>
-                        )}
-
-                        {hour && (
-                          <div className='flex justify-between items-center'>
-                            <h3 className='text-gray-400'>Horário</h3>
-                            <h4 className='text-sm'>{hour}</h4>
-                          </div>
-                        )}
-
-                        <div className='flex justify-between items-center'>
-                          <h3 className='text-gray-400'>Barbearia</h3>
-                          <h4 className='text-sm'>{barbershop.name}</h4>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <BookingInfo
+                      booking={{
+                        barbershop: barbershop,
+                        date:
+                          date && hour
+                            ? setMinutes(
+                                setHours(date, Number(hour.split(':')[0])),
+                                Number(hour.split(':')[1])
+                              )
+                            : undefined,
+                        service: service,
+                      }}
+                    />
                   </div>
+
                   <SheetFooter className='px-5'>
                     <Button
                       onClick={handleBookingSubmit}
